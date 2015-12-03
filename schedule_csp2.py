@@ -16,6 +16,22 @@ Variables:
 Constraints:
 
 '''
+class Appointment:
+
+    def __init__(self, starttime, endtime, procedure):
+        self.starttime = starttime
+        self.endtime = endtime
+        self.procedure = procedure # a list of procedures
+
+class Procedure:
+
+    def __init(self, procedure_name, actions ):
+        self.name = procedure_name
+        self.actions = actions
+
+
+class Resource:
+
 
 class Employee:
     def __init__(self, name, position, times, minh, maxh):
@@ -48,7 +64,9 @@ class Employee:
     #def get_pos(self):
         #return self.pos
         
-        
+
+
+
 def csp_setup(name, tasks, employees):
     csp = CSP(name)
     task_vars = []
