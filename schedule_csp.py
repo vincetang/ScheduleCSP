@@ -31,7 +31,7 @@ class Employee:
         self.maxh = maxh
         
         
-def csp_setup(name, schedule, employees):
+def csp_setup(name, schedule, staff):
     csp = CSP(name)
     v_sched = []
     for day in schedule:
@@ -41,7 +41,7 @@ def csp_setup(name, schedule, employees):
                 task = hour[0] # position required for task
                 time = hour[1] # time of task
                 v = Variable(task)
-                for e in employees:
+                for e in staff:
                     if time in e.times:
                         v.add_domain_values(e)
                 csp.add_var(v) 
@@ -52,8 +52,8 @@ def csp_setup(name, schedule, employees):
     return csp, v_sched
 
 def min_constraints(csp):
-    employees = csp.get_all_vars()
+    staff = csp.get_all_vars()
     #for i in 
 
-def schedule_model(schedule, employees):
-    csp, v_sched = csp_setup('schedule', schedule, employees)
+def schedule_model(schedule, staff):
+    csp, v_sched = csp_setup('schedule', schedule, staff)
