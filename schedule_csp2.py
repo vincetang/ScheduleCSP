@@ -3,54 +3,43 @@ from propagators import *
 import itertools
 
 '''
-Input: 
+Classes
 
-schedule = A list of all tasks that need to be completed. Each element contains a time duration
-for the task and the position required for someone to complete the task
+Input:
+    List of appointments
+        Appointments = [apt1, apt2, apt3, apt4]
 
-staff = a list of Employee objects that specify details like when the employee is
-available, their position and min/max hours needed
+Classes:
+    Appointment objects are intiialized with [start_time, end_time, procedures]
+        Examples:
+        apt1 = [2, 4, [p1]]
+        apt2 = [2, 6, [p2, p3]]
+        apt3 = [1, 6, [p2]]
+        apt4 = [5, 6, [p3]]
 
-Variables:
+    Procedures are initialized with [procedure_name, duration, staff_reqs, resources]
+        Examples:
+        p1 = ['flu shot', 1, ['doctor'], [r1, r2]]
+        p2 = ['measure bp', 1, [], [r3, r4]]
+        p3 = ['diagnose', 2, ['doctor'], []]
+
+    Resources are initialized with [name, qty_total]
+        Examples:
+        r1 = ['needle', 3]
+        r2 = ['bandaid', 5]
+        r3 = ['bp monitor', 1]
+        r4 = ['stethascope', 2]
+
+    Staff are initialized with [name, position, times, minh, maxh]
+        Examples:
+        s1 = ['Deborah, 'receptionist', [1], 3, 5]
+        s2 = ['Clark', 'doctor', [1,2,3,4,5], 5, 10]
+        s3 = ['Lisa', 'nurse', [2,3,4], 4, 6]
 
 Constraints:
-
-------------------
-Example:
-
-# list of appointments
-Appointments = [apt1, apt2, apt3, apt4]
-
-Appointment objects are intiialized with [start_time, end_time, procedures]
-    Examples:
-    apt1 = [2, 4, [p1]]
-    apt2 = [2, 6, [p2, p3]]
-    apt3 = [1, 6, [p2]]
-    apt4 = [5, 6, [p3]]
-
-Procedures are initialized with [procedure_name, duration, staff_reqs, resources]
-    Examples:
-    p1 = ['flu shot', 1, ['doctor'], [r1, r2]]
-    p2 = ['measure bp', 1, [], [r3, r4]]
-    p3 = ['diagnose', 2, ['doctor'], []]
-
-Resources are initialized with [name, qty_total]
-    Examples:
-    r1 = ['needle', 3]
-    r2 = ['bandaid', 5]
-    r3 = ['bp monitor', 1]
-    r4 = ['stethascope', 2]
-
-Staff are initialized with [name, position, times, minh, maxh]
-    Examples:
-    s1 = ['Deborah, 'receptionist', [1], 3, 5]
-    s2 = ['Clark', 'doctor', [1,2,3,4,5], 5, 10]
-    s3 = ['Lisa', 'nurse', [2,3,4], 4, 6]
-
-Constraints
     #TODO
 
-Scheduling:
+Scheduling CSP:
     - A schedule is a 5x5 matrix. Each column represents a day, each row represents an hour
     - An appointment can be scheduled on any day but must be scheduled within the hours of start_time and end_time
       and must satisfy all constraints listed above
