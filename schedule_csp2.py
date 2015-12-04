@@ -41,6 +41,12 @@ Resources are initialized with [name, qty_total]
     r3 = ['bp monitor', 1]
     r4 = ['stethascope', 2]
 
+Staff are initialized with [name, position, times, minh, maxh]
+    Examples:
+    s1 = ['Deborah, 'receptionist', [1], 3, 5]
+    s2 = ['Clark', 'doctor', [1,2,3,4,5], 5, 10]
+    s3 = ['Lisa', 'nurse', [2,3,4], 4, 6]
+
 Constraints
     #TODO
 
