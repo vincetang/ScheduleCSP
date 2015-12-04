@@ -88,6 +88,12 @@ class Procedure:
             total_duration += action[2]
         return total_duration
 
+    def end_procedure(self):
+        '''This method must be run at the end of a procedure to free resources'''
+        self.inprogress = False
+        for resource in self.resources:
+            resource.free()
+
 
 
 class Resource:
@@ -103,6 +109,30 @@ class Resource:
         self.qty_total = qty_total
         self.qty_used = qty_used
 
+    def is_available(self):
+        if (self.qty_used == self.qty_total):
+            return False
+        return True
+
+    def set_qty_total(self,qty):
+        self.qty_total = qty
+
+    def use(self):
+        '''Uses a resource. Returns True and increments qty_used if available. Returns False if
+            resource is unavailable (qty_used == qty_total)
+        '''
+        if self.qty_used < self.qty_total:
+            self.qty_used += 1
+            return True
+        else:
+            return False
+
+    def free(self):
+        '''Free a resource once you are done using'''
+        self.qty_used -= 1
+
+        if self.qty_used < 0:
+            qty_used = 0
 
 class Staff:
     def __init__(self, name, position, times, minh, maxh):
