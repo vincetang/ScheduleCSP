@@ -45,7 +45,7 @@ class Appointment:
         return self.endtime
 
     def get_duration(self):
-        ''return this apopintments duration'''
+        '''return this apopintments duration'''
         return self.duration
 
     def can_be_completed(self, time):
