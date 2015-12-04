@@ -39,14 +39,35 @@ class Procedure:
             name: string - the name of the procedure
             actions: a list of tuples ('name','duration'). The first element
                     specifies the name of the action, the second is its duration
-            staff: if empty, any staff member can perform this procedure, otherwise
+            pos_reqs: if empty, any staff member can perform this procedure, otherwise
                     only the staff members with positions listed can perform this procedure
             resources: the required resources to complete this procedure
+            inprogress: true if procedure is being performed (resources in use), false otherwise
     '''
-    def __init(self, procedure_name, actions, staff, resources ):
+    def __init(self, procedure_name, actions, pos_reqs, resources ):
         self.name = procedure_name
         self.actions = actions
-        self.staff = staff
+        self.pos_reqs = pos_reqs
+        self.resources = resources
+        self.inprogress = False
+
+    def get_actions(self):
+        '''returns the actions in done in this procedure, a list of ('name', duration) tuples'''
+        return self.actions
+    def get_required_positions(self):
+        '''returns the list of staff position requirements for this procedure'''
+        return self.pos_reqs
+
+    def get_resources(self):
+        '''returns the list of resources that this procedure uses'''
+
+    def get_total_duration(self):
+        '''returns the total time required to complete the procedure'''
+        total_duration = 0
+        for action in self.actions:
+            total_duration += action[2]
+        return total_duration
+
 
 
 class Resource:
