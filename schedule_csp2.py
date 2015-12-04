@@ -36,8 +36,15 @@ Classes:
         s2 = ['Clark', 'doctor', [1,2,3,4,5], 5, 10]
         s3 = ['Lisa', 'nurse', [2,3,4], 4, 6]
 
-Constraints:
-    #TODO
+Constraints: **INCOMPLETE**
+    1. Appointments must start somewhere between start_time and end_time-1
+    2. The time of an appointment plus its duration cannot surpass end_time
+    3. At least one staff member must be assigned to an appointment
+    4. All positional requirements must be filled by staff for any given appointment
+
+    The following constraints must be used if we allow multiple appointments at one time
+    5. All resources needed in an appointment must be available for the time the apopintment is booked
+
 
 Scheduling CSP:
     - A schedule is a 5x5 matrix. Each column represents a day, each row represents an hour
