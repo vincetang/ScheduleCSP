@@ -32,7 +32,27 @@ class Appointment:
     def __init__(self, starttime, endtime, duration, procedure):
         self.starttime = starttime
         self.endtime = endtime
+        self.duration = duration
         self.procedure = procedure # a list of procedures
+
+
+    def get_starttime(self):
+        '''returns this appointments start time'''
+        return self.starttime
+
+    def get_endtime(self):
+        '''returns this appointments end time'''
+        return self.endtime
+
+    def get_duration(self):
+        ''return this apopintments duration'''
+        return self.duration
+
+    def can_be_completed(self, time):
+        '''Returns true if appointment can be completed at time'''
+        if (time >= self.starttime) and (self.duration + time <= self.endtime):
+            return True
+        return False
 
 class Procedure:
     '''A procedure has the following attributes
