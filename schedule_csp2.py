@@ -93,55 +93,12 @@ class Appointment:
             endtime: latest the appointment can end (if the appointment
                     can't be finished by this time, do not start it)
             duration: length of the appointment (starttime + duration >= endtime)
-            procedure: a list of procedures involved in this apointment
-
-        An appointment can be started and completed at any time between
-        starttime and endtime. However, if the appointment cannot be completed
-        by endtime, we must rebook the appointment.
+            resources: a list of resources required for this appointment
     '''
-    def __init__(self, start_time, end_time, procedures):
+    def __init__(self, start_time, end_time, resources):
         self.start_time = start_time
         self.end_time = end_time
-        self.procedures = procedures # a list of procedures
-
-    def get_total_duration(self):
-        '''return this apopintments duration'''
-        total_duration = 0
-        for proc in self.procedures:
-            total_duration += proc.duration
-
-        return total_duration
-
-
-    def can_be_completed(self, time):
-        '''Returns true if appointment can be completed at time'''
-        if (time >= self.start_time) and (self.get_total_duration() + time <= self.end_time):
-            return True
-        return False
-
-class Procedure:
-    '''A procedure has the following attributes
-            name: string - the name of the procedure
-            actions: a list of tuples ('name','duration'). The first element
-                    specifies the name of the action, the second is its duration
-            pos_reqs: if empty, any staff member can perform this procedure, otherwise
-                    only the staff members with positions listed can perform this procedure
-            resources: the required resources to complete this procedure
-            inprogress: true if procedure is being performed (resources in use), false otherwise
-    '''
-    def __init(self, procedure_name, duration, staff_reqs, resources ):
-        self.name = procedure_name
-        self.duration = duration
-        self.staff_reqs = staff_reqs
-        self.resources = resources
-        self.inprogress = False
-
-    def end_procedure(self):
-        '''This method must be run at the end of a procedure to free resources'''
-        self.inprogress = False
-        for resource in self.resources:
-            resource.free()
-
+        self.resources = resources # a list of procedures
 
 
 class Resource:
@@ -186,21 +143,8 @@ class Staff:
     def __init__(self, name, position, times, minh, maxh):
         self.name = name
         self.pos = position
-        self.times = times  # list of nums representing hours
         self.minh = minh
         self.maxh = maxh
-        
-    def get_maxh(self):
-        return self.maxh
-    
-    def get_minh(self):
-        return self.minh    
-
-    def get_name(self):
-        return self.name
-
-    def get_position(self):
-        return self.pos
 
 #class Task:
     #def __init__(self, position, time):
@@ -212,10 +156,7 @@ class Staff:
     
     #def get_pos(self):
         #return self.pos
-        
-
-
-
+    
 def csp_setup(name, tasks, staff):
     csp = CSP(name)
     task_vars = []
