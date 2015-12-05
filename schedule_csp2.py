@@ -4,97 +4,59 @@ import itertools
 import copy
 
 '''
-Classes
-
-Input:
-    List of appointments
-        Appointments = [apt1, apt2, apt3, apt4]
 
 Classes:
-    Appointment objects are intiialized with [start_time, end_time, procedures]
-        Examples:
-        apt1 = [2, 4, [p1]]
-        apt2 = [2, 6, [p2, p3]]
-        apt3 = [1, 6, [p2]]
-        apt4 = [5, 6, [p3]]
+    Appointment objects are intiialized with start_time, end_time, [resources], [position]
+        Example:
+        apt1 = Appointment(2, 4, ['needle', 'stethoscope'], ['doctor', 'nurse'])
 
-    Procedures are initialized with [procedure_name, duration, staff_reqs, resources]
-        Examples:
-        p1 = ['flu shot', 1, ['doctor'], [r1, r2]]
-        p2 = ['measure bp', 1, [], [r3, r4]]
-        p3 = ['diagnose', 2, ['doctor'], []]
+    Resources are initialized with name, qty_total, reusable
+        Example:
+        r1 = Resource('needle', 3, False)
 
-    Resources are initialized with [name, qty_total]
-        Examples:
-        r1 = ['needle', 3]
-        r2 = ['bandaid', 5]
-        r3 = ['bp monitor', 1]
-        r4 = ['stethascope', 2]
+    Staff are initialized with [name, position, minh, maxh]
+        Example:
+        s1 = ['Clark', 'doctor', 5, 10]
 
-    Staff are initialized with [name, position, times, minh, maxh]
-        Examples:
-        s1 = ['Deborah, 'receptionist', [1], 3, 5]
-        s2 = ['Clark', 'doctor', [1,2,3,4,5], 5, 10]
-        s3 = ['Lisa', 'nurse', [2,3,4], 4, 6]
 
-Constraints: **INCOMPLETE**
-    1. Appointments must start somewhere between start_time and end_time-1
-    2. The time of an appointment plus its duration cannot surpass end_time
-    3. At least one staff member must be assigned to an appointment
-    4. All positional requirements must be filled by staff for any given appointment
-
-    The following constraints must be used if we allow multiple appointments at one time
-    5. All resources needed in an appointment must be available for the time the apopintment is booked
+Constraints:
+    1. All appointments are fulfilled by staff with correct position
+    2. No staff member is attending more than one appointment that is overlapping
+    3. Every staff member is working at most their max number of appointments
+    4. Every staff member is working at least their min number of appointments
+    5. Overlapping appointments do not use more of one type of reusable resource than what is available
+    6. All appointments do not use more than the available number of each non reusable resource
 
 
 Scheduling CSP:
-    - A schedule is a 5x5 matrix. Each column represents a day, each row represents an hour
-    - An appointment can be scheduled on any day but must be scheduled within the hours of start_time and end_time
-      and must satisfy all constraints listed above
-    - row[i] represents the hour of i to i+1. For example, the first row corresponds to times starting at 1 and
-      ending at 2
-      Examples:
-      [0,0] represents the first day from the first hour to the second hour. An appointment with start_time
-      1 and end_time 2 would fit into [0,0], [0,1], [0,2], [0,3], [0,4] (i.e., any slot in the first row)
-
-      An appointment with start_time 2 and end_time 4 and total_ duration 1 could fit into any column and take
-      any slot in the 2nd or 3rd row
-
-      An appointment wit start_time 2 and end_time 4 and total_duration 2 would take up 2 slots. It could fit in
-      any column but would take up BOTH rows 2 and 3.
-
-      Suppose we have the following appointments:
-      Note appointments are defined with [start_time, end_time, procedures]. Suppose all procedures in this example
-      have a duration of 1 hour.
-      apt1 = [1, 2, [p1]]
-      apt2 = [3, 4, [p3]]
-      apt3 = [1, 5, [p1,p2,p3,p4]]
-      apt4 = [1, 5, [p2]]
-
-      One possible schedule would look like this
-      [ [apt1],[],[],[apt3],[    ],
-        [    ],[],[],[apt3],[    ],
-        [apt2],[],[],[apt3],[apt4],
-        [    ],[],[],[apt3],[    ],
-        [    ],[],[],[apt3],[    ]]
-
-      Another valid schedule for the same appointments would be
-      [ [apt4],[apt3],[],[],[apt1],
-        [    ],[apt3],[],[],[    ],
-        [apt2],[apt3],[],[],[    ],
-        [    ],[apt3],[],[],[    ],
-        [    ],[apt3],[],[],[    ]]
+    Input:
+         - A list of Appointment objects
+         - A list of Resource objects
+         - A list of Staff objects
+         Note: all Appointment objects must correspond with Resource and Staff objects; ie an appointment cannot require
+         a syringe while no syringe is listed in the list of Resource objects
+         
+    Oputput:
+         If a solution exists:
+         - Each appointment is printed along with the staff member required and that staff member's position
+         
+         If a solution does NOT exist:
+         - a notification is printed informing the user that there are insufficient resources or staff to accomodate
+           all the appointments
+           
+    A list of resources is not printed if a solution exists because since the required resources are specified as
+    input for each appointment, a solution implies that those required resources are available, otherwise there 
+    would be no solution.
 
 '''
 
 class Appointment:
 
     ''' An Appointment has the following attributes:
-            starttime: earliest the appointment can be started
-            endtime: latest the appointment can end (if the appointment
-                    can't be finished by this time, do not start it)
-            duration: length of the appointment (starttime + duration >= endtime)
+            start_time: the hour this appointment starts
+            end_time: the hour this appointment ends
             resources: a list of resources required for this appointment
+            positions: a list of acceptable staff member positions to fulfill this appointment
     '''
     def __init__(self, start_time, end_time, resources, positions):
         self.start_time = start_time
@@ -357,19 +319,6 @@ a4 = Appointment(2, 5, ['thermometer'], ['nurse', 'doctor'])
 a5 = Appointment (6, 8, ['otoscope', 'stethoscope', 'swab'], ['nurse', 'doctor'])
 #a = [a1,a2,a3]
 a = [a1,a2,a3,a4,a5]
-x = get_overlapping_appointments(a)
-
-#for t in x:
-
-    #print("Appointment conflicts:")
-    #for y in t:
-        #print("start:" + str(y.start_time) + " end:" + str(y.end_time) + " resources:" + str(y.resources))
-
-##procedures
-#p1 = Procedure('injection', [('swab', 1), ('inject', 2)], ['nurse'], ['needle', 'fluid'])
-#p2 = Procedure('blood pressure', [('inflate', 3), ('measure', 1)], ['nurse'], ['bp_device'])
-#p3 = Procedure('heartbeat', [('listen', 2)], ['doctor'], ['stethoscope'])
-#p = [p1,p2,p3]
 
 #resources
 
