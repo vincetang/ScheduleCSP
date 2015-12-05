@@ -84,6 +84,7 @@ class Variable:
         self.curdom = [True] * len(domain)      #using list
         #for bt_search
         self.assignedValue = None
+        #self.var_type = var_type
 
     def add_domain_values(self, values):
         '''Add additional domain values to the domain
