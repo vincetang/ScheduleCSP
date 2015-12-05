@@ -210,19 +210,12 @@ def overlap_constraints(csp, tasks):
 def schedule_model(a,r,s):
     csp, app_vars, res_vars, staff_vars = csp_setup('schedule',a,r,s)
     #overlap_constraints(csp, task_vars)
+    #add_resource_constraints(csp, app_vars)
     return csp, app_vars
 
 
-def add_resource_constraints(csp,resources):
-    # generate satisfying tuples which are
-    # if appointments at the same time, do not use more qty than we have
-    sat_tuples = []
+def add_resource_constraints(csp, appvars):
 
-    overlapping_appointments = []
-
-    #for each apponitment in a set of overlapping appointments
-        # get a count of resources
-        # check of qty is less than max for each resource
 
 def get_overlapping_appointments(app_vars):
     day = [[] for i in range(0,24)] # create a list of 24 empty lists, each representing an hour of the day
