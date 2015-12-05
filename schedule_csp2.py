@@ -147,17 +147,6 @@ class Staff:
         self.minh = minh
         self.maxh = maxh
 
-#class Task:
-    #def __init__(self, position, time):
-        #self.pos = position
-        #self.time = time    # list/tuple of 2 elements = start and and time
-        
-    #def get_time(self):
-        #return self.time
-    
-    #def get_pos(self):
-        #return self.pos
-
 def csp_setup(name, app, res, staff):
     csp = CSP(name)
     app_vars = copy.deepcopy(app) # this will be used for printing final solution
@@ -179,7 +168,7 @@ def csp_setup(name, app, res, staff):
         
         s_list = []
         for s in app[a].positions:
-            v = Variable('staff'+str(res_count))
+            v = Variable('staff'+str(staff_count))
             v.add_domain_values(staff)
             csp.add_var(v)
             staff_vars.append(v)
@@ -188,31 +177,35 @@ def csp_setup(name, app, res, staff):
         
     return csp, app_vars, res_vars, staff_vars
 
-def times_intersect(t1, t2):
-    times = t1.time + t2.time
-    times.sort()
-    if times[:2] != t1.time and times[:2] != t2.time:
-        return True
-    return False
-
-def overlap_constraints(csp, tasks):
-    ''' '''
-    for i in tasks:
-        for j in tasks:
-            if i != j and times_intersect(i, j):
-                name = str(i) + ', ' + str(j)
-                vals = [(0,0),(1,0),(0,1)]         # can't have both tasks scheduled
-                c = Constraint(name, [i,j])
-                c.add_satisfying_tuples(vals)    
-                csp.add_constraint(c)                  
-
 
 def schedule_model(a,r,s):
     csp, app_vars, res_vars, staff_vars = csp_setup('schedule',a,r,s)
+    overlaps = get_overlapping_appointments(app_vars)
+    add_overlapping_staff_constraints(csp, overlaps, s)
+    add_correct_staff_constraints(csp, a, app_vars, s)
     #overlap_constraints(csp, task_vars)
     #add_resource_constraints(csp, app_vars)
     return csp, app_vars
 
+def add_overlapping_staff_constraints(csp, overlaps, staff_list):
+    '''Staff members should not be working on more than one appointment at a time. '''
+    for i in overlaps:
+        if len(i) > 1:  # overlaps found
+            c = Constraint('overlap_staff', i)
+            sat = list(itertools.permutations(staff_list, len(i)))
+            c.add_satisfying_tuples(sat)
+            
+def add_correct_staff_constraints(csp, app_list, app_vars, staff_list):
+    '''Only staff members with the correct position can cover each appointment. '''
+    for i in range(len(app_list)):
+        p = app_list[i].positions
+        v = app_vars[i]
+        s = []
+        for j in staff_list:
+            if j.pos in p:
+                s.append(j)
+        c = Constraint('correct_staff_position', v)
+        c.add_satisfying_tuples(s)        
 
 def add_resource_constraints(csp, appvars):
 
