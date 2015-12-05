@@ -100,54 +100,41 @@ class Appointment:
         self.start_time = start_time
         self.end_time = end_time
         self.resources = resources # a list of procedures
-        self.positions = positions
+        self.position = positions
         
 class Resource:
     '''A resource has the following attributes:
             resource_name: the name of the resource (a string)
             qty_total: the total number of this resource available
-            qty_used: the number of this resource being used
-
-        If qty_used == qty_total then the resource is not available
     '''
-    def __init__(self, resource_name, qty_total):
+    def __init__(self, resource_name, qty_total, reusable):
         self.resource_name = resource_name
         self.qty_total = qty_total
-        #self.qty_used = 0 # none used when initialized
+        self.reusable = reusable
 
-    def is_available(self):
-        if (self.qty_used < self.qty_total):
-            return True
-        return False
-
-    def set_qty_total(self,qty):
-        self.qty_total = qty
-
-    def use(self):
-        '''Uses a resource. Returns True and increments qty_used if available. Returns False if
-            resource is unavailable (qty_used == qty_total)
-        '''
-        if self.qty_used < self.qty_total:
-            self.qty_used += 1
-            return True
-        else:
-            return False
-
-    def free(self):
-        '''Free a resource once you are done using'''
-        self.qty_used -= 1
-
-        if self.qty_used < 0:
-            qty_used = 0
 
 class Staff:
+    '''A resource has the following attributes:
+            name: the name of the staff member
+            pos: the position this staff member holds
+            minh: the minimum number of appointments this staff member can work
+            maxh: the maximum number of appointments this staff member can work
+    '''    
     def __init__(self, name, position, minh, maxh):
         self.name = name
         self.pos = position
         self.minh = minh
         self.maxh = maxh
+        
+def assign_resource(r, r_list):
+    '''Helper for csp_setup. '''
+    for i in r_list:
+        if i.resource_name == r:
+            return [i]
 
 def csp_setup(name, app, res, staff):
+    '''Create CSP object and all Variable objects needed along with their domains. '''
+    
     csp = CSP(name)
     app_vars = copy.deepcopy(app) # this will be used for printing final solution
     res_vars = []   # easier to also keep separate copy of these vars for making constraints
@@ -157,67 +144,163 @@ def csp_setup(name, app, res, staff):
     
     for a in range(len(app)):
         
+        # resources
         r_list = []
         for r in app[a].resources:
-            v = Variable('resource'+str(res_count))
-            v.add_domain_values(res)
+            v = Variable('resource'+str(res_count)) 
+            v.add_domain_values(assign_resource(r, res)) # we know exactly what resources needed so can limit domain 
             csp.add_var(v)
             res_vars.append(v)
+            r_list.append(v)
             res_count+=1
         app_vars[a].resources = r_list
         
+        # staff
         s_list = []
-        for s in app[a].positions:
-            v = Variable('staff'+str(staff_count))
-            v.add_domain_values(staff)
-            csp.add_var(v)
-            staff_vars.append(v)
-            staff_count+=1            
-        app_vars[a].positions = s_list
+        v = Variable('staff'+str(staff_count))
+        csp.add_var(v)
+        v.add_domain_values(staff)
+        staff_vars.append(v)
+        app_vars[a].position = v
         
     return csp, app_vars, res_vars, staff_vars
-
-
-def schedule_model(a,r,s):
-    csp, app_vars, res_vars, staff_vars = csp_setup('schedule',a,r,s)
-    overlaps = get_overlapping_appointments(app_vars)
-    add_overlapping_staff_constraints(csp, overlaps, s)
-    add_correct_staff_constraints(csp, a, app_vars, s)
-    #overlap_constraints(csp, task_vars)
-    return csp, app_vars
 
 def add_overlapping_staff_constraints(csp, overlaps, staff_list):
     '''Staff members should not be working on more than one appointment at a time. '''
     for i in overlaps:
         if len(i) > 1:  # overlaps found
-            c = Constraint('overlap_staff', i)
+            c_vars = [j.position for j in i]
+            c = Constraint('overlap_staff', c_vars)
             sat = list(itertools.permutations(staff_list, len(i)))
             c.add_satisfying_tuples(sat)
+            csp.add_constraint(c)
             
 def add_correct_staff_constraints(csp, app_list, app_vars, staff_list):
-    '''Only staff members with the correct position can cover each appointment. '''
+    '''Only staff members with the acceptable position can cover each appointment. '''
     for i in range(len(app_list)):
-        p = app_list[i].positions
-        v = app_vars[i]
+        p = app_list[i].position
+        v = app_vars[i].position
         s = []
         for j in staff_list:
             if j.pos in p:
-                s.append(j)
-        c = Constraint('correct_staff_position', v)
-        c.add_satisfying_tuples(s)        
+                s.append((j,))
+        c = Constraint('correct_staff_position', [v])
+        c.add_satisfying_tuples(s)  
+        csp.add_constraint(c)
+        
+        
+def add_maxh_staff_constraints(csp, app_list, staff_vars, staff_list):
+    '''Each staff member should work at least their established maximum
+    number of appointments. '''
+    
+    args = [staff_list for m in range(len(app_list))]
+    tuples = list(itertools.product(*args))
+    
+    for i in staff_list:
+        for j in range(len(tuples)):
+            if tuples[j] != None and tuples[j].count(i) > i.maxh:
+                tuples[j] = None
+                
+    while None in tuples:
+        tuples.remove(None)   
+        
+    c = Constraint('maxh', staff_vars)
+    c.add_satisfying_tuples(tuples)  
+    csp.add_constraint(c)
+    
+def add_minh_staff_constraints(csp, app_list, staff_vars, staff_list):
+    '''Each staff member should work at least their established minimum
+    number of appointments. '''
+    
+    args = [staff_list for m in range(len(app_list))]
+    tuples = list(itertools.product(*args))
+    
+    for i in staff_list:
+        for j in range(len(tuples)):
+            if tuples[j] != None and tuples[j].count(i) < i.minh:
+                tuples[j] = None
+                
+    while None in tuples:
+        tuples.remove(None)   
+        
+    c = Constraint('minh', staff_vars)
+    c.add_satisfying_tuples(tuples)  
+    csp.add_constraint(c)
+        
+        
+def get_reusable_resources(r):
+    '''Helper for add_reusable_resource_constraints. '''
+    result = []
+    for i in r:
+        if i.reusable:
+            result.append(i)
+    return result
 
-def add_resource_constraints(csp,resources):
-    # generate satisfying tuples which are
-    # if appointments at the same time, do not use more qty than we have
-    sat_tuples = []
+def add_reusable_resource_constraints(csp, overlap_vars, resource_list):
+    '''Overlapping appointments do not use more of one type of reusable resource 
+    than what is available'''
+    
+    for i in overlap_vars:
+        if len(i) > 1:
+            reusables = get_reusable_resources(r)
+            resources = [r for l in i for r in l.resources]
+            args = [resource_list for m in range(len(resources))]
+            tuples = list(itertools.product(*args))
 
-    overlapping_appointments = []
+            for j in reusables:
+                for k in range(len(tuples)):
+                    if tuples[k] != None and tuples[k].count(j) > j.qty_total:
+                        tuples[k] = None
+            while None in tuples:
+                tuples.remove(None)
 
-    #for each apponitment in a set of overlapping appointments
-        # get a count of resources
-        # check of qty is less than max for each resource
+            c = Constraint('reusable_resources', resources)
+            c.add_satisfying_tuples(tuples)  
+            csp.add_constraint(c)
+      
+def get_nonreusable_resources(r):
+    '''Helper for add_nonreusable_resource_constraints. '''
+    result = []
+    for i in r:
+        if not i.reusable:
+            result.append(i)
+    return result
+
+def is_nonreuseable(name, nonreusables):
+    '''Helper for add_nonreusable_resource_constraints. '''
+    for i in nonreusables:
+        if name == i.resource_name:
+                return True
+    return False
+
+def add_nonreusable_resource_constraints(csp, app_list, app_vars, resource_list):
+    '''Resources that are nonreusable should not be used more times than the available
+    quantity of that resource. '''
+    
+    nonreusables = get_nonreusable_resources(r)
+    resources = []
+    for i in range(len(app_list)):
+        for j in range(len(app_list[i].resources)):
+            if is_nonreuseable(app_list[i].resources[j], nonreusables):
+                resources.append(app_vars[i].resources[j])
+                
+    args = [resource_list for m in range(len(resources))]
+    tuples = list(itertools.product(*args)) 
+    
+    for j in nonreusables:
+        for k in range(len(tuples)):
+            if tuples[k] != None and tuples[k].count(j) > j.qty_total:
+                tuples[k] = None
+    while None in tuples:
+        tuples.remove(None)    
+    
+    c = Constraint('nonreusable_resources', resources)
+    c.add_satisfying_tuples(tuples)  
+    csp.add_constraint(c)    
 
 def get_overlapping_appointments(app_vars):
+    '''Return a nested list of overlapping appointments. '''
+    
     day = [[] for i in range(0,24)] # create a list of 24 empty lists, each representing an hour of the day
 
     for av in app_vars:
@@ -229,36 +312,58 @@ def get_overlapping_appointments(app_vars):
     return overlaps
 
 def print_soln(l):
-    result = []
+    '''Print the final arrangement of staff to appointments. Note that resources are not listed
+    because as long as the CSP is solvable, all resource constraints are met. '''
+    
+    print("--- Final Schedule ---")
     for i in l:
-        result.append(i.get_assigned_value())
-    print(str(result))
-
+        print('Appointment' + str(l.index(i)) + ' at ' + str(i.start_time) + '-' + str(i.end_time) + ':')
+        print('\tStaff: '+ str(i.position.get_assigned_value().name) + ', ' + str(i.position.get_assigned_value().pos) + '\n')
+        
+def schedule_model(a,r,s):
+    '''Create the CSP, all the Variable objects and all the Constraints. Return the final CSP
+    and all the appointments to print the final output if the problem has a solution. '''
+    # setup 
+    csp, app_vars, res_vars, staff_vars = csp_setup('schedule',a,r,s)
+    
+    # overlapping appointments
+    var_overlaps = get_overlapping_appointments(app_vars)
+    
+    # constraints
+    add_overlapping_staff_constraints(csp, var_overlaps, s)
+    add_correct_staff_constraints(csp, a, app_vars, s)
+    add_maxh_staff_constraints(csp, a, staff_vars, s)
+    add_minh_staff_constraints(csp, a, staff_vars, s)
+    add_reusable_resource_constraints(csp, var_overlaps, r)
+    add_nonreusable_resource_constraints(csp, a, app_vars, r)
+    
+    return csp, app_vars
+        
 def solve_schedule(a,r,s):
+    '''Solve the CSP for this problem. '''
     csp, app_vars = schedule_model(a,r,s)
     solver = BT(csp)
     print("=======================================================")
-    print("GAC")
+    print("using GAC")
     solver.bt_search(prop_GAC)
-    print("Solution")
-    #print_soln(app_vars)  
+    print_soln(app_vars)  
     
     
 #appointments
 a1 = Appointment(1, 3, ['needle', 'stethoscope', 'swab'], ['nurse', 'doctor'])
-a2 = Appointment(3, 4, ['needle', 'thermometer'], ['nurse'])
-a3 = Appointment(5, 7, ['needle', 'otoscope', 'bp_device', 'bandage'], ['doctor'])
-a4 = Appointment(2, 5, ['thermometer'], [])
-a5 = Appointment (6, 8, ['otoscope', 'stethoscope', 'swab'], ['nurse'])
-a = [a1,a2,a3]
-a2 = [a1,a2,a3,a4,a5]
-x = get_overlapping_appointments(a2)
+a2 = Appointment(3, 4, ['needle', 'thermometer'], ['nurse', 'doctor'])
+a3 = Appointment(5, 7, ['needle', 'otoscope', 'bp_device'], ['nurse', 'doctor'])
+a4 = Appointment(2, 5, ['thermometer'], ['nurse', 'doctor'])
+a5 = Appointment (6, 8, ['otoscope', 'stethoscope', 'swab'], ['nurse', 'doctor'])
+#a = [a1,a2,a3]
+a = [a1,a2,a3,a4,a5]
+x = get_overlapping_appointments(a)
 
-for t in x:
+#for t in x:
 
-    print("Appointment conflicts:")
-    for y in t:
-        print("start:" + str(y.start_time) + " end:" + str(y.end_time) + " resources:" + str(y.resources))
+    #print("Appointment conflicts:")
+    #for y in t:
+        #print("start:" + str(y.start_time) + " end:" + str(y.end_time) + " resources:" + str(y.resources))
 
 ##procedures
 #p1 = Procedure('injection', [('swab', 1), ('inject', 2)], ['nurse'], ['needle', 'fluid'])
@@ -268,20 +373,22 @@ for t in x:
 
 #resources
 
-r1 = Resource('needle', 2)
-r2 = Resource('bp_device', 1)
-r3 = Resource('stethoscope', 1)
-r4 = Resource('thermometer', 1)
-r5 = Resource('tongue depressor', 1)
-r6 = Resource('otoscope', 1)
-r7 = Resource('swab', 1)
-r8 = Resource('bandage', 1)
-r9 = Resource('gauze', 1)
-r = [r1,r2,r3,r4,r5,r6,r7,r8,r9]
+r1 = Resource('needle', 3, False)
+r2 = Resource('bp_device', 1, True)
+r3 = Resource('stethoscope', 1, True)
+r4 = Resource('thermometer', 3, True)
+r5 = Resource('tongue depressor', 1, False)
+r6 = Resource('otoscope', 2, True)
+r7 = Resource('swab', 2, False)
+r8 = Resource('bandage', 1, False)
+r9 = Resource('gauze', 1, False)
+r = [r2,r1,r3,r4,r6,r7,r8]
 
 #staff
-s1 = Staff('N1', 'nurse', 2, 4)
-s2 = Staff('D1', 'doctor', 1, 5)
-s = [s1,s2]
+s1 = Staff('N1', 'nurse', 2, 10)
+s2 = Staff('D1', 'doctor', 0, 0)
+s3 = Staff('N2', 'nurse', 1, 10)
+s4 = Staff('D2', 'doctor', 0, 0)
+s = [s1,s2,s3,s4]
 
-#solve_schedule(a,r,s)
+solve_schedule(a,r,s)
