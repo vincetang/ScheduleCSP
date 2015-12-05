@@ -156,7 +156,7 @@ class Staff:
     
     #def get_pos(self):
         #return self.pos
-    
+
 def csp_setup(name, tasks, staff):
     csp = CSP(name)
     task_vars = []
