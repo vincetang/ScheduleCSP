@@ -1,6 +1,7 @@
 from cspbase import *
 from propagators import *
 import itertools
+import copy
 
 '''
 Classes
@@ -95,12 +96,12 @@ class Appointment:
             duration: length of the appointment (starttime + duration >= endtime)
             resources: a list of resources required for this appointment
     '''
-    def __init__(self, start_time, end_time, resources):
+    def __init__(self, start_time, end_time, resources, positions):
         self.start_time = start_time
         self.end_time = end_time
         self.resources = resources # a list of procedures
-
-
+        self.positions = positions
+        
 class Resource:
     '''A resource has the following attributes:
             resource_name: the name of the resource (a string)
@@ -112,7 +113,7 @@ class Resource:
     def __init__(self, resource_name, qty_total):
         self.resource_name = resource_name
         self.qty_total = qty_total
-        self.qty_used = 0 # none used when initialized
+        #self.qty_used = 0 # none used when initialized
 
     def is_available(self):
         if (self.qty_used < self.qty_total):
@@ -140,7 +141,7 @@ class Resource:
             qty_used = 0
 
 class Staff:
-    def __init__(self, name, position, times, minh, maxh):
+    def __init__(self, name, position, minh, maxh):
         self.name = name
         self.pos = position
         self.minh = minh
@@ -157,20 +158,35 @@ class Staff:
     #def get_pos(self):
         #return self.pos
 
-def csp_setup(name, tasks, staff):
+def csp_setup(name, app, res, staff):
     csp = CSP(name)
-    task_vars = []
-    for t in tasks:
-        domain = [1, 0]     # 1 = keep the task, 0 = don't keep the task
-        #for e in staff:
-            #if t.pos == e.pos and t.time in e.times:
-                #domain.append(e)
-        v = Variable(str(t), t)
-        v.add_domain_values(domain)
-        csp.add_var(v)
-        task_vars.append(v)
+    app_vars = copy.deepcopy(app) # this will be used for printing final solution
+    res_vars = []   # easier to also keep separate copy of these vars for making constraints
+    staff_vars = []
+    res_count = 1   # this and staff_count are just for naming the variables
+    staff_count = 1
+    
+    for a in range(len(app)):
         
-    return csp, task_vars
+        r_list = []
+        for r in app[a].resources:
+            v = Variable('resource'+str(res_count))
+            v.add_domain_values(res)
+            csp.add_var(v)
+            res_vars.append(v)
+            res_count+=1
+        app_vars[a].resources = r_list
+        
+        s_list = []
+        for s in app[a].positions:
+            v = Variable('staff'+str(res_count))
+            v.add_domain_values(staff)
+            csp.add_var(v)
+            staff_vars.append(v)
+            staff_count+=1            
+        app_vars[a].positions = s_list
+        
+    return csp, app_vars, res_vars, staff_vars
 
 def times_intersect(t1, t2):
     times = t1.time + t2.time
@@ -191,10 +207,10 @@ def overlap_constraints(csp, tasks):
                 csp.add_constraint(c)                  
 
 
-def schedule_model(tasks, staff):
-    csp, task_vars = csp_setup('schedule', tasks, staff)
-    overlap_constraints(csp, task_vars)
-    return csp, task_vars
+def schedule_model(a,r,s):
+    csp, app_vars, res_vars, staff_vars = csp_setup('schedule',a,r,s)
+    #overlap_constraints(csp, task_vars)
+    return csp, app_vars
 
 
 
@@ -224,17 +240,43 @@ def print_soln(l):
         result.append(i.get_assigned_value())
     print(str(result))
 
-def solve_schedule(t,e):
-    csp, var_array = schedule_model(t,e)
+def solve_schedule(a,r,s):
+    csp, app_vars = schedule_model(a,r,s)
     solver = BT(csp)
     print("=======================================================")
     print("GAC")
     solver.bt_search(prop_GAC)
     print("Solution")
-    print_soln(var_array)  
+    #print_soln(app_vars)  
     
     
-t = [[1,3],[2,4],[4,5],[5,6]]
-t = [[1,6],[2,4],[3,5],[4,6]]
-e = []
-solve_schedule(t,e)
+#appointments
+a1 = Appointment(1, 3, ['needle', 'stethoscope', 'swab'], ['nurse', 'doctor'])
+a2 = Appointment(3, 4, ['needle', 'thermometer'], ['nurse'])
+a3 = Appointment(5, 7, ['needle', 'otoscope', 'bp_device', 'bandage'], ['doctor'])
+a = [a1,a2,a3]
+
+##procedures
+#p1 = Procedure('injection', [('swab', 1), ('inject', 2)], ['nurse'], ['needle', 'fluid'])
+#p2 = Procedure('blood pressure', [('inflate', 3), ('measure', 1)], ['nurse'], ['bp_device'])
+#p3 = Procedure('heartbeat', [('listen', 2)], ['doctor'], ['stethoscope'])
+#p = [p1,p2,p3]
+
+#resources
+r1 = Resource('needle', 2)
+r2 = Resource('bp_device', 1)
+r3 = Resource('stethoscope', 1)
+r4 = Resource('thermometer', 1)
+r5 = Resource('tongue depressor', 1)
+r6 = Resource('otoscope', 1)
+r7 = Resource('swab', 1)
+r8 = Resource('bandage', 1)
+r9 = Resource('gauze', 1)
+r = [r1,r2,r3,r4,r5,r6,r7,r8,r9]
+
+#staff
+s1 = Staff('N1', 'nurse', 2, 4)
+s2 = Staff('D1', 'doctor', 1, 5)
+s = [s1,s2]
+
+solve_schedule(a,r,s)
