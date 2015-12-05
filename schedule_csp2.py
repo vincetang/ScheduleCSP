@@ -213,26 +213,27 @@ def schedule_model(a,r,s):
     return csp, app_vars
 
 
+def add_resource_constraints(csp,resources):
+    # generate satisfying tuples which are
+    # if appointments at the same time, do not use more qty than we have
+    sat_tuples = []
 
-""" Constraints
-    1. Appointments cannot overlap
-    2. If appointment requires staff
-"""
-def add_position_contraints(csp, staff):
-    ''' Add contraints that force staff to work together if they are
-        under a certain level of power (i.e. trainees need experienced workers
-    '''
+    overlapping_appointments = []
 
-def add_role_count_contraints(csp, staff):
-    '''Add contraints for the number of staff at each level of experience
-        i.e. cannot have all janitors scheduled with no doctors/nurses
-    '''
+    #for each apponitment in a set of overlapping appointments
+        # get a count of resources
+        # check of qty is less than max for each resource
 
-def add_hour_contraints(csp, staff):
-    '''Add contraints for minimum and maximum number of hours that
-        an employee can work
-    '''
+def get_overlapping_appointments(app_vars):
+    day = [[] for i in range(0,24)] # create a list of 24 empty lists, each representing an hour of the day
 
+    for av in app_vars:
+        for x in range(av.start_time, av.end_time):
+            day[x].append(av)
+
+    overlaps = [s for s in day if len(s)>1]
+
+    return overlaps
 
 def print_soln(l):
     result = []
@@ -254,7 +255,17 @@ def solve_schedule(a,r,s):
 a1 = Appointment(1, 3, ['needle', 'stethoscope', 'swab'], ['nurse', 'doctor'])
 a2 = Appointment(3, 4, ['needle', 'thermometer'], ['nurse'])
 a3 = Appointment(5, 7, ['needle', 'otoscope', 'bp_device', 'bandage'], ['doctor'])
+a4 = Appointment(2, 5, ['thermometer'], [])
+a5 = Appointment (6, 8, ['otoscope', 'stethoscope', 'swab'], ['nurse'])
 a = [a1,a2,a3]
+a2 = [a1,a2,a3,a4,a5]
+x = get_overlapping_appointments(a2)
+
+for t in x:
+
+    print("Appointment conflicts:")
+    for y in t:
+        print("start:" + str(y.start_time) + " end:" + str(y.end_time) + " resources:" + str(y.resources))
 
 ##procedures
 #p1 = Procedure('injection', [('swab', 1), ('inject', 2)], ['nurse'], ['needle', 'fluid'])
@@ -263,6 +274,7 @@ a = [a1,a2,a3]
 #p = [p1,p2,p3]
 
 #resources
+
 r1 = Resource('needle', 2)
 r2 = Resource('bp_device', 1)
 r3 = Resource('stethoscope', 1)
@@ -279,4 +291,4 @@ s1 = Staff('N1', 'nurse', 2, 4)
 s2 = Staff('D1', 'doctor', 1, 5)
 s = [s1,s2]
 
-solve_schedule(a,r,s)
+#solve_schedule(a,r,s)
