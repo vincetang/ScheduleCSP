@@ -336,7 +336,7 @@ def case8b():
 
 if __name__ == "__main__":
     
-    # ---- test cases with more variables but takes longer time to complete (~4 mins in total) ---
+    # --- test cases with more variables but takes longer time to complete (~4 mins in total) ---
     tests_long = []
     tests_long = [case1(), not case2()]     # *** comment out this line to skip the long tests
     
