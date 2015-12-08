@@ -1,3 +1,8 @@
+#Group Members:
+#Vincent Tang 		998192450 	g2tangvi
+#Justin Djordjevic	997412152	g1djordj
+#Sandy Tran		996419148	g3transa
+
 from schedule_csp import *
 
 def case1():
@@ -331,9 +336,9 @@ def case8b():
 
 if __name__ == "__main__":
     
-    # ---- test cases with more variables but takes longer time to complete (~2 mins each) ---
+    # ---- test cases with more variables but takes longer time to complete (~4 mins in total) ---
     tests_long = []
-    #tests_long = [case1(), not case2()]     # *** comment out this line to skip the long tests
+    tests_long = [case1(), not case2()]     # *** comment out this line to skip the long tests
     
     # shorter test cases for each set of constraints
     tests_short = [not case3a(), case3b(), not case4a(), case4b(), not case5a(), case5b(), not case6a(), case6b(), not case7a(), case7b(), not case8a(), case8b()] + tests_long
@@ -342,7 +347,8 @@ if __name__ == "__main__":
     for i in tests_short:
         if i == False:
             passall += 1
-        
+            print('Test' + str(tests_short.index(i)) + ' failed')
+            
     if passall == 0:
         print('All tests pass!')
     else:

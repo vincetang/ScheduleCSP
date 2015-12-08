@@ -1,3 +1,8 @@
+#Group Members:
+#Vincent Tang 		998192450 	g2tangvi
+#Justin Djordjevic	997412152	g1djordj
+#Sandy Tran		996419148	g3transa
+
 from cspbase import *
 from propagators import *
 import itertools
